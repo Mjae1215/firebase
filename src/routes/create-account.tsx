@@ -1,44 +1,10 @@
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useState } from 'react';
-import {styled} from 'styled-components';
 import { auth } from '../firebase';
 import { Navigate, useNavigate } from 'react-router-dom';
-
-const Wrapper = styled.div`
-height: 100%;
-display: flex;
-flex-direction: column;
-align-items: center;
-width: 420px;
-padding: 50px 0px;
-`;
-const Form = styled.form`
-margin-top: 50px;
-display: flex;
-flex-direction: column;
-gap: 10px;
-width: 100%;
-`;
-const Title = styled.h1`
-font-size: 42px;
-`;
-const Input = styled.input`
-padding: 10px 20px;
-border-radius: 50px;
-border: none;
-width: 100%;
-font-size: 16px;
-&[type="submit"] {
-cursor: pointer;
-&:hover {
-opacity: 0.8;
-}
-}
-`;
-const Error = styled.span`
-font-weight: 600;
-color: tomato;
-`;
+import { FirebaseError } from 'firebase/app';
+import { Link } from 'react-router-dom';
+import { Wrapper, Form, Title, Input, Error, Switcher } from '../components/auth-components';
 
 export default function CreateAccount() {
     const navigate = useNavigate();
@@ -46,6 +12,7 @@ export default function CreateAccount() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const {target: {name, value}} = e;
         if(name === "name") {
@@ -58,6 +25,7 @@ export default function CreateAccount() {
     };
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setError("");
         if(name === "" || email === "" || password === "" || isLoading === true) {
             return;
         }
@@ -69,8 +37,10 @@ export default function CreateAccount() {
             await updateProfile(credentials.user, {displayName: name});
             console.log(name, email, password); 
             navigate("/");
-        } catch (error) {
-            console.log(error);
+        } catch (err) {
+            if(err instanceof FirebaseError){
+                setError(err.message);
+            }
         }
         finally{
             setLoading(false);
@@ -87,6 +57,11 @@ export default function CreateAccount() {
             <Input onChange={onChange} name="password" value={password} placeholder="Password" type="password" required/>
             <Input onChange={onChange} type="submit" value={isLoading ? "Loading..." : "Create Account"}/>
         </Form>
+        {error !== ""? <Error>{error}</Error> : null}
+        <Switcher>
+            Already have an account? {" "}
+            <Link to="/login">Login</Link>
+        </Switcher>
     </Wrapper>
     )
 }
